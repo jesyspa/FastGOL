@@ -14,6 +14,6 @@ int main() {
     auto time_end = std::chrono::system_clock::now();
 
     auto duration = time_end - time_start;
-    std::cout << "Time: " << (0.000'000'1 * std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / ITERATIONS)
+    std::cout << "Time: " << (std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / 1'000'000. / ITERATIONS)
         << " milliseconds per iteration.\n";
 }
