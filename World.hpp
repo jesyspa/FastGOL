@@ -17,10 +17,10 @@ class World {
     Cell get_active(size_t x, size_t y) const;
     void set_future(size_t x, size_t y, Cell cell);
 
-    size_t up(size_t p) const;
-    size_t down(size_t p) const;
-    size_t left(size_t p) const;
-    size_t right(size_t p) const;
+    Cell* up(Cell* p) const;
+    Cell* down(Cell* p) const;
+    Cell* left(Cell* p) const;
+    Cell* right(Cell* p) const;
 
 public:
     World(size_t width, size_t height);

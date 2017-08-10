@@ -34,62 +34,67 @@ void World::populate_uniform(double chance, unsigned seed) {
 void World::update() {
     // cell itself always counts as a neighbour
     int neighbours = 0;
-    size_t p = 0;
-    auto click = [&p, &neighbours, this]() {
-        future[p] = live_data[row_size * (int)active[p] + neighbours];
+    Cell* in = active.data();
+    Cell* out = future.data();
+    auto click = [&in, &out, &neighbours, this]() {
+        *out = live_data[row_size * (int)*in + neighbours];
+    };
+    auto next = [&in, &out, this]() {
+        in = right(in);
+        out = right(out);
     };
 
     // cell 0, 0
-    neighbours = active[p] + active[down(p)] + active[right(p)] + active[down(right(p))];
+    neighbours = *in + *down(in) + *right(in) + *down(right(in));
     click();
     for (size_t i = 0; i < width - 2; ++i) {
         // cell i+1, 0
-        p = right(p);
-        neighbours += active[right(p)] + active[right(down(p))];
+        next();
+        neighbours += *right(in) + *right(down(in));
         click();
-        neighbours -= active[left(p)] + active[left(down(p))];
+        neighbours -= *left(in) + *left(down(in));
     }
     // cell width-1, 0
-    p = right(p);
+    next();
     click();
 
     // looparound
-    p = right(p);
+    next();
 
     for (size_t j = 0; j < height - 2; ++j) {
         // cell 0, j+1
-        neighbours = active[p] + active[up(p)] + active[up(right(p))] + active[right(p)] + active[down(p)] + active[down(right(p))];
+        neighbours = *in + *up(in) + *up(right(in)) + *right(in) + *down(in) + *down(right(in));
         click();
 
         for (size_t i = 0; i < width - 2; ++i) {
             // cell i+1, j+1
-            p = right(p);
-            neighbours += active[right(up(p))] + active[right(p)] + active[right(down(p))];
+            next();
+            neighbours += *right(up(in)) + *right(in) + *right(down(in));
             click();
-            neighbours -= active[left(up(p))] + active[left(p)] + active[left(down(p))];
+            neighbours -= *left(up(in)) + *left(in) + *left(down(in));
         }
 
         // cell width-1, j+1
-        p = right(p);
+        next();
         click();
 
         // looparound
-        p = right(p);
+        next();
         neighbours = 0;
     }
 
     // cell 0, height-1
-    neighbours = active[p] + active[up(p)] + active[right(p)] + active[up(right(p))];
+    neighbours = *in + *up(in) + *right(in) + *up(right(in));
     click();
     for (size_t i = 0; i < width - 2; ++i) {
         // cell i+1, height-1
-        p = right(p);
-        neighbours += active[right(p)] + active[right(up(p))];
+        next();
+        neighbours += *right(in) + *right(up(in));
         click();
-        neighbours -= active[left(p)] + active[left(up(p))];
+        neighbours -= *left(in) + *left(up(in));
     }
     // cell width-1, height-1
-    p = right(p);
+    next();
     click();
 
     active.swap(future);
@@ -104,10 +109,10 @@ std::ostream& operator<<(std::ostream& os, World const& world) {
     return os;
 }
 
-size_t World::up(size_t p) const { return p-width; }
-size_t World::down(size_t p) const { return p+width; }
-size_t World::left(size_t p) const { return p-1; }
-size_t World::right(size_t p) const { return p+1; }
+Cell* World::up(Cell* p) const { return p-width; }
+Cell* World::down(Cell* p) const { return p+width; }
+Cell* World::left(Cell* p) const { return p-1; }
+Cell* World::right(Cell* p) const { return p+1; }
 
 size_t World::index(size_t x, size_t y) const {
     return y * width + x;
