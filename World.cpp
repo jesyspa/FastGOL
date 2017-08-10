@@ -1,11 +1,26 @@
 #include "World.hpp"
 #include <random>
 #include <ostream>
+#include <algorithm>
+
+namespace { 
+    size_t const row_size = 16;
+    Cell live_data[row_size * 2];
+    void init_live_data() {
+        std::fill(std::begin(live_data), std::end(live_data), dead);
+        live_data[3] = alive;
+        live_data[row_size + 3] = alive;
+        live_data[row_size + 4] = alive;
+    }
+}
 
 World::World(size_t width, size_t height)
     : width(width), height(height),
       active(width*height), future(active)
-{}
+{
+    static int dummy = (init_live_data(), 0);
+    (void)dummy;
+}
 
 void World::populate_uniform(double chance, unsigned seed) {
     if (!seed)
@@ -21,10 +36,7 @@ void World::update() {
     int neighbours = 0;
     size_t p = 0;
     auto click = [&p, &neighbours, this]() {
-        if (active[p])
-            future[p] = to_cell(neighbours > 2 && neighbours < 5);
-        else 
-            future[p] = to_cell(neighbours == 3);
+        future[p] = live_data[row_size * (int)active[p] + neighbours];
     };
 
     // cell 0, 0

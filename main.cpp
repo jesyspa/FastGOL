@@ -2,7 +2,7 @@
 #include <iostream>
 #include <chrono>
 
-size_t const WORLD_SIZE = 500;
+size_t const WORLD_SIZE = 1000;
 size_t const ITERATIONS = 1000;
 
 int main() {
