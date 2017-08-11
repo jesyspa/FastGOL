@@ -4,10 +4,10 @@
 #include <chrono>
 #include <stdexcept>
 
-size_t const WORLD_SIZE = 1000;
+size_t const WORLD_SIZE = 1024;
 size_t const ITERATIONS = 100;
 
-size_t const TEST_SIZE = 6;
+size_t const TEST_SIZE = 64;
 size_t const TEST_COUNT = 5;
 
 void test_world() {
@@ -29,15 +29,19 @@ void test_world() {
 }
 
 int main() try {
+    std::cout << "Testing..." << std::flush;
     for (size_t i = 0; i < TEST_COUNT; ++i)
         test_world();
+    std::cout << " Done!\n";
 
+    std::cout << "Running..." << std::flush;
     World world(WORLD_SIZE, WORLD_SIZE);
     world.populate_uniform(0.3);
     auto time_start = std::chrono::system_clock::now();
     for (size_t i = 0; i < ITERATIONS; ++i)
         world.update();
     auto time_end = std::chrono::system_clock::now();
+    std::cout << " Done!\n";
 
     auto duration = time_end - time_start;
     std::cout << "Time: " << (std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / 1'000'000. / ITERATIONS)
