@@ -43,42 +43,41 @@ void World::update() {
     element_type neighbours = in[0] + in[m_width];
     element_type new_neighbours = in[1] + in[m_width+1];
 
+    element_type value = 0;
     auto click_zero = [&] {
-        size_t left_n = old_neighbours >> 2*(cells_per_element-1);
-        size_t mid_n = neighbours % 4;
-        size_t right_n = (neighbours >> 2) % 4;
+        size_t left_n = old_neighbours >> bits_per_cell*(cells_per_element-1);
+        size_t mid_n = neighbours & value_mask;
+        size_t right_n = (neighbours >> bits_per_cell) & value_mask;
         size_t num_neighbours = left_n + mid_n + right_n;
         size_t self = *in % 2;
-        *out = live_data[row_size * self + num_neighbours];
+        value = live_data[row_size * self + num_neighbours];
     };
     auto click_pos = [&](int pos) {
-        size_t left_n = (neighbours >> 2*(pos-1)) % 4;
-        size_t mid_n = (neighbours >> 2*pos) % 4;
-        size_t right_n = (neighbours >> 2*(pos+1)) % 4;
+        size_t left_n = (neighbours >> bits_per_cell*(pos-1)) & value_mask;
+        size_t mid_n = (neighbours >> bits_per_cell*pos) & value_mask;
+        size_t right_n = (neighbours >> bits_per_cell*(pos+1)) & value_mask;
         size_t num_neighbours = left_n + mid_n + right_n;
-        size_t self = (*in >> 2*pos) % 2;
-        *out |= live_data[row_size * self + num_neighbours] << (2*pos);
+        size_t self = (*in >> bits_per_cell*pos) % 2;
+        value |= live_data[row_size * self + num_neighbours] << (bits_per_cell*pos);
     };
     auto click_max = [&] {
-        size_t left_n = (neighbours >> 2*(cells_per_element-2)) % 4;
-        size_t mid_n = (neighbours >> 2*(cells_per_element-1)) % 4;
-        size_t right_n = new_neighbours % 4;
+        size_t left_n = (neighbours >> bits_per_cell*(cells_per_element-2)) & value_mask;
+        size_t mid_n = (neighbours >> bits_per_cell*(cells_per_element-1));
+        size_t right_n = new_neighbours & value_mask;
         size_t num_neighbours = left_n + mid_n + right_n;
-        size_t self = (*in >> 2*(cells_per_element-1)) % 2;
-        *out |= live_data[row_size * self + num_neighbours] << 2*(cells_per_element-1);
-    };
-    auto next = [&] {
-        ++in;
-        ++out;
-        old_neighbours = neighbours;
-        neighbours = new_neighbours;
+        size_t self = (*in >> bits_per_cell*(cells_per_element-1)) % 2;
+        value |= live_data[row_size * self + num_neighbours] << bits_per_cell*(cells_per_element-1);
     };
     auto click = [&] {
         click_zero();
         for (size_t pos = 1; pos < cells_per_element-1; ++pos)
             click_pos(pos);
         click_max();
-        next();
+        *out = value;
+        ++in;
+        ++out;
+        old_neighbours = neighbours;
+        neighbours = new_neighbours;
     };
 
     // Top row
@@ -152,17 +151,17 @@ size_t World::height() const {
 
 Cell World::get(size_t x, size_t y) const {
     auto ix = index(x, y);
-    auto jx = 2 * (x % cells_per_element);
+    auto jx = bits_per_cell * (x % cells_per_element);
     return to_cell(1 & (m_active[ix] >> jx));
 }
 
 void World::set(size_t x, size_t y, Cell cell) {
     auto ix = index(x, y);
-    auto jx = 2 * (x % cells_per_element);
+    auto jx = bits_per_cell * (x % cells_per_element);
     if (cell == alive)
-        m_active[ix] |= 1u << jx;
+        m_active[ix] |= element_type(1u) << jx;
     else
-        m_active[ix] &= ~(1 << jx);
+        m_active[ix] &= ~(element_type(1u) << jx);
 }
 
 size_t World::index(size_t x, size_t y) const {
