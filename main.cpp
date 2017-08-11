@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 size_t const WORLD_SIZE = 1024;
-size_t const ITERATIONS = 100;
+size_t const ITERATIONS = 1000;
 
 size_t const TEST_SIZE = 64;
 size_t const TEST_COUNT = 5;
