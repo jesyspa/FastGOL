@@ -19,7 +19,7 @@ inline char show_cell(Cell cell) {
 // general terms rather than having to be written for every class.
 class BaseWorld {
 public:
-    virtual ~BaseWorld() = default;
+    virtual ~BaseWorld() noexcept = default;
     virtual void resize(size_t width, size_t height) = 0;
     virtual size_t width() const = 0;
     virtual size_t height() const = 0;
