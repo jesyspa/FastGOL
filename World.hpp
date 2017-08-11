@@ -34,6 +34,9 @@ private:
     // Note that other cells are stored there, too.
     size_t index(size_t x, size_t y) const;
 
+    // Test whether the given dimensions are allowed, and throw if not.
+    void test_size(size_t width, size_t height) const;
+
 public:
     World();
     World(size_t width, size_t height);

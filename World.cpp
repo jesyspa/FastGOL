@@ -2,36 +2,17 @@
 #include <algorithm>
 #include <stdexcept>
 
-namespace {
-    World::element_type live_data[1 << World::bits_per_cell];
-    void init_live_data_impl() {
-        live_data[3] = 1;
-        live_data[11] = 1;
-        live_data[12] = 1;
-    }
-
-    void init_live_data() {
-        static int dummy = (init_live_data_impl(), 0);
-        (void)dummy;
-    }
-}
-
 World::World() : m_width(), m_height(), m_active(), m_future()
-{
-    init_live_data();
-}
+{ }
 
 World::World(size_t width, size_t height)
     : m_width(width/cells_per_element), m_height(height),
       m_active(m_width*(m_height+2)), m_future(m_active)
 {
-    if (width % cells_per_element != 0)
-        throw std::runtime_error{"Width must be a multiple of cells_per_element."};
-    init_live_data();
+    test_size(width, height);
 }
 
 World::World(BaseWorld const& world) : World() {
-    init_live_data();
     copy(world);
 }
 
@@ -92,8 +73,7 @@ void World::update() {
 }
 
 void World::resize(size_t width, size_t height) {
-    if (width % cells_per_element != 0)
-        throw std::runtime_error{"Width must be a multiple of cells_per_element."};
+    test_size(width, height);
     m_width = width/cells_per_element;
     m_height = height;
     m_active.resize(m_width*(m_height+2));
@@ -127,3 +107,11 @@ size_t World::index(size_t x, size_t y) const {
     return (y+1) * m_width + (x / cells_per_element);
 }
 
+void World::test_size(size_t width, size_t height) const {
+    (void)height; // all heights are fine at the moment
+    // This is somewhat redundant, as cells_per_element is larger than 2.
+    if (width < 2)
+        throw std::runtime_error{"Width must be at least two."};
+    if (width % cells_per_element != 0)
+        throw std::runtime_error{"Width must be a multiple of cells_per_element."};
+}
