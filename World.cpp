@@ -3,12 +3,11 @@
 #include <stdexcept>
 
 namespace {
-    size_t const row_size = 16;
-    World::element_type live_data[row_size * 2];
+    World::element_type live_data[1 << World::bits_per_cell];
     void init_live_data_impl() {
         live_data[3] = 1;
-        live_data[row_size + 3] = 1;
-        live_data[row_size + 4] = 1;
+        live_data[11] = 1;
+        live_data[12] = 1;
     }
 
     void init_live_data() {
@@ -45,6 +44,8 @@ void World::update() {
 
     auto click = [&] {
         element_type in_value = *in;
+        for (size_t shift = 1; shift < bits_per_cell; ++shift)
+            in_value |= in_value << 1;
         element_type out_value = 0;
         element_type total_neighbours = (old_neighbours >> max_shift)
                 + (neighbours << bits_per_cell)
@@ -52,10 +53,10 @@ void World::update() {
                 + (neighbours >> bits_per_cell)
                 + (new_neighbours << max_shift);
 
+        element_type result = total_neighbours ^ in_value;
         for (size_t pos = 0; pos < cells_per_element; ++pos) {
-            size_t num_neighbours = (total_neighbours >> bits_per_cell*pos) & value_mask;
-            size_t self = (in_value >> bits_per_cell*pos) & 1;
-            out_value |= live_data[row_size * self + num_neighbours] << (bits_per_cell*pos);
+            size_t self = result >> bits_per_cell*pos & value_mask;
+            out_value |= live_data[self] << (bits_per_cell*pos);
         }
         *out = out_value;
         ++in;

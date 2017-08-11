@@ -6,7 +6,7 @@
 
 class World final : public IWorld {
 public:
-    using element_type = uint32_t;
+    using element_type = uint64_t;
     static constexpr size_t bits_per_cell = 4;
     static constexpr size_t cells_per_element = sizeof(element_type) * 8 / bits_per_cell;
     static constexpr size_t max_shift = bits_per_cell * (cells_per_element - 1);
