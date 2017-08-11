@@ -28,10 +28,7 @@ void World::update() {
     element_type new_neighbours = 0;
 
     auto process_one = [&] {
-        element_type in_value = *in;
-        // Operations like this need to be changed into loops in order for bits_per_cell to be
-        // variable.
-        in_value = in_value | (in_value << 1) | (in_value << 2) | (in_value << 3);
+        element_type in_value = *in << 3;
         // We need the old and new neighbour counts in order to get them right for the leftmost
         // and rightmost cell.
         element_type total_neighbours = (old_neighbours >> max_shift)
