@@ -30,12 +30,16 @@ World::World(size_t width, size_t height)
     init_live_data();
 }
 
-World::World(IWorld const& world) : World() {
+World::World(BaseWorld const& world) : World() {
     init_live_data();
     copy(world);
 }
 
 void World::update() {
+    // Cells are stored as 0001s (alive) and 0000s (dead).  By adding these values, we can quickly
+    // get a count of the number of neighbours a cell has.  If the cell is alive, we take the
+    // bitwise complement of the resulting value; we then check whether the resulting bit pattern
+    // leaves the cell alive (this is unambiguous) and store that.
     element_type* in = m_active.data() + m_width;
     element_type* out = m_future.data() + m_width;
     element_type old_neighbours = 0;
@@ -56,6 +60,7 @@ void World::update() {
         element_type option_a = ~(result >> 3) & ~(result >> 2) & (result >> 1) & result;
         element_type option_b = (result >> 3) & ~(result >> 2) & (result >> 1) & result;
         element_type option_c = (result >> 3) & (result >> 2) & ~(result >> 1) & ~result;
+        // The constant here needs to be changed if bits_per_cell is to be variable.
         *out = (option_a | option_b | option_c) & 0x1111111111111111ull;
         ++in;
         ++out;

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "IWorld.hpp"
+#include "BaseWorld.hpp"
 #include <vector>
 
 // Reference implementation for the game of life; slow but steady.
-class ReferenceWorld final : public IWorld{
+class ReferenceWorld final : public BaseWorld {
     size_t m_width, m_height;
     std::vector<Cell> m_data;
 
