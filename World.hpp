@@ -2,24 +2,17 @@
 
 #include "IWorld.hpp"
 #include <vector>
+#include <cstdint>
 
 class World final : public IWorld {
+public:
+    static constexpr size_t cells_per_element = 16;
+    using element_type = uint32_t;
+private:
     size_t m_width, m_height;
-    std::vector<Cell> m_active, m_future;
+    std::vector<element_type> m_active, m_future;
 
     size_t index(size_t x, size_t y) const;
-    Cell get_active(size_t x, size_t y) const;
-    void set_future(size_t x, size_t y, Cell cell);
-
-    Cell up_left(Cell* in) const;
-    Cell up(Cell* in) const;
-    Cell up_right(Cell* in) const;
-    Cell down_left(Cell* in) const;
-    Cell down(Cell* in) const;
-    Cell down_right(Cell* in) const;
-    Cell left(Cell* in) const;
-    Cell right(Cell* in) const;
-    Cell here(Cell* in) const;
 
 public:
     World();

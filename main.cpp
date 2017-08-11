@@ -21,7 +21,7 @@ void test_world() {
     if (world == real)
         return;
 
-    std::cerr << "World mismatch:\n";
+    std::cerr << "Error!\nWorld mismatch:\n";
     std::cerr << "Initial:\n" << old;
     std::cerr << "Expected:\n" << world;
     std::cerr << "Actual:\n" << real;
@@ -29,19 +29,19 @@ void test_world() {
 }
 
 int main() try {
-    std::cout << "Testing..." << std::flush;
+    std::cout << "Testing... " << std::flush;
     for (size_t i = 0; i < TEST_COUNT; ++i)
         test_world();
-    std::cout << " Done!\n";
+    std::cout << "Done!\n";
 
-    std::cout << "Running..." << std::flush;
+    std::cout << "Running... " << std::flush;
     World world(WORLD_SIZE, WORLD_SIZE);
     world.populate_uniform(0.3);
     auto time_start = std::chrono::system_clock::now();
     for (size_t i = 0; i < ITERATIONS; ++i)
         world.update();
     auto time_end = std::chrono::system_clock::now();
-    std::cout << " Done!\n";
+    std::cout << "Done!\n";
 
     auto duration = time_end - time_start;
     std::cout << "Time: " << (std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / 1'000'000. / ITERATIONS)

@@ -1,14 +1,14 @@
 #include "World.hpp"
 #include <algorithm>
+#include <stdexcept>
 
 namespace {
     size_t const row_size = 16;
-    Cell live_data[row_size * 2];
+    World::element_type live_data[row_size * 2];
     void init_live_data_impl() {
-        std::fill(std::begin(live_data), std::end(live_data), dead);
-        live_data[3] = alive;
-        live_data[row_size + 3] = alive;
-        live_data[row_size + 4] = alive;
+        live_data[3] = 1;
+        live_data[row_size + 3] = 1;
+        live_data[row_size + 4] = 1;
     }
 
     void init_live_data() {
@@ -23,9 +23,11 @@ World::World() : m_width(), m_height(), m_active(), m_future()
 }
 
 World::World(size_t width, size_t height)
-    : m_width(width), m_height(height),
-      m_active(width*height), m_future(m_active)
+    : m_width(width/cells_per_element), m_height(height),
+      m_active(m_width*m_height), m_future(m_active)
 {
+    if (width % cells_per_element != 0)
+        throw std::runtime_error{"Width must be a multiple of cells_per_element."};
     init_live_data();
 }
 
@@ -35,83 +37,113 @@ World::World(IWorld const& world) : World() {
 }
 
 void World::update() {
-    // cell itself always counts as a neighbour
-    int neighbours = 0;
-    Cell* in = m_active.data();
-    Cell* out = m_future.data();
-    auto click = [&in, &out, &neighbours]() {
-        *out = live_data[row_size * (int)*in + neighbours];
+    element_type* in = m_active.data();
+    element_type* out = m_future.data();
+    element_type old_neighbours = 0;
+    element_type neighbours = in[0] + in[m_width];
+    element_type new_neighbours = in[1] + in[m_width+1];
+
+    auto click_zero = [&] {
+        size_t left_n = old_neighbours >> 2*(cells_per_element-1);
+        size_t mid_n = neighbours % 4;
+        size_t right_n = (neighbours >> 2) % 4;
+        size_t num_neighbours = left_n + mid_n + right_n;
+        size_t self = *in % 2;
+        *out = live_data[row_size * self + num_neighbours];
     };
-    auto next = [&in, &out]() {
+    auto click_pos = [&](int pos) {
+        size_t left_n = (neighbours >> 2*(pos-1)) % 4;
+        size_t mid_n = (neighbours >> 2*pos) % 4;
+        size_t right_n = (neighbours >> 2*(pos+1)) % 4;
+        size_t num_neighbours = left_n + mid_n + right_n;
+        size_t self = (*in >> 2*pos) % 2;
+        *out |= live_data[row_size * self + num_neighbours] << (2*pos);
+    };
+    auto click_max = [&] {
+        size_t left_n = (neighbours >> 2*(cells_per_element-2)) % 4;
+        size_t mid_n = (neighbours >> 2*(cells_per_element-1)) % 4;
+        size_t right_n = new_neighbours % 4;
+        size_t num_neighbours = left_n + mid_n + right_n;
+        size_t self = (*in >> 2*(cells_per_element-1)) % 2;
+        *out |= live_data[row_size * self + num_neighbours] << 2*(cells_per_element-1);
+    };
+    auto next = [&] {
         ++in;
         ++out;
+        old_neighbours = neighbours;
+        neighbours = new_neighbours;
+    };
+    auto click = [&] {
+        click_zero();
+        for (size_t pos = 1; pos < cells_per_element-1; ++pos)
+            click_pos(pos);
+        click_max();
+        next();
     };
 
-    // cell 0, 0
-    neighbours = here(in) + down(in) + right(in) + down_right(in);
+    // Top row
+    // First cell
     click();
-    for (size_t i = 0; i < m_width - 2; ++i) {
-        // cell i+1, 0
-        next();
-        neighbours += right(in) + down_right(in);
+
+    // Other cells
+    for (size_t i = 0; i < m_width-2; ++i) {
+        new_neighbours = in[1] + in[m_width+1];
         click();
-        neighbours -= left(in) + down_left(in);
     }
-    // cell width-1, 0
-    next();
+    // Last cell
+    new_neighbours = 0;
     click();
 
-    // looparound
-    next();
+    // Other rows
+    for (size_t j = 0; j < m_height-2; ++j) {
+        old_neighbours = 0;
+        neighbours = in[-m_width] + in[0] + in[m_width];
+        new_neighbours = in[-m_width+1] + in[1] + in[m_width+1];
 
-    for (size_t j = 0; j < m_height - 2; ++j) {
-        // cell 0, j+1
-        neighbours = here(in) + up(in) + up_right(in) + right(in) + down(in) + down_right(in);
+        // First cell
         click();
 
-        for (size_t i = 0; i < m_width - 2; ++i) {
-            // cell i+1, j+1
-            next();
-            neighbours += up_right(in) + right(in) + down_right(in);
+        // Other cells
+        for (size_t i = 0; i < m_width-2; ++i) {
+            new_neighbours = in[-m_width+1] + in[1] + in[m_width+1];
             click();
-            neighbours -= up_left(in) + left(in) + down_left(in);
         }
-
-        // cell width-1, j+1
-        next();
+        // Last cell
+        new_neighbours = 0;
         click();
-
-        // looparound
-        next();
-        neighbours = 0;
     }
 
-    // cell 0, height-1
-    neighbours = here(in) + up(in) + right(in) + up_right(in);
+    // Last row
+    old_neighbours = 0;
+    neighbours = in[-m_width] + in[0];
+    new_neighbours = in[-m_width+1] + in[1];
+
+    // First cell
     click();
-    for (size_t i = 0; i < m_width - 2; ++i) {
-        // cell i+1, height-1
-        next();
-        neighbours += right(in) + up_right(in);
+
+    // Other cells
+    for (size_t i = 0; i < m_width-2; ++i) {
+        new_neighbours = in[-m_width+1] + in[1];
         click();
-        neighbours -= left(in) + up_left(in);
     }
-    // cell width-1, height-1
-    next();
+    // Last cell
+    new_neighbours = 0;
     click();
 
     m_active.swap(m_future);
 }
 
 void World::resize(size_t width, size_t height) {
-    m_width = width;
+    if (width % cells_per_element != 0)
+        throw std::runtime_error{"Width must be a multiple of cells_per_element."};
+    m_width = width/cells_per_element;
     m_height = height;
-    m_active.resize(width*height);
-    m_future.resize(width*height);
+    m_active.resize(m_width*m_height);
+    m_future.resize(m_width*m_height);
 }
 
 size_t World::width() const {
-    return m_width;
+    return cells_per_element*m_width;
 }
 
 size_t World::height() const {
@@ -119,31 +151,21 @@ size_t World::height() const {
 }
 
 Cell World::get(size_t x, size_t y) const {
-    return get_active(x, y);
+    auto ix = index(x, y);
+    auto jx = 2 * (x % cells_per_element);
+    return to_cell(1 & (m_active[ix] >> jx));
 }
 
 void World::set(size_t x, size_t y, Cell cell) {
-    m_active[index(x, y)] = cell;
+    auto ix = index(x, y);
+    auto jx = 2 * (x % cells_per_element);
+    if (cell == alive)
+        m_active[ix] |= 1u << jx;
+    else
+        m_active[ix] &= ~(1 << jx);
 }
-
-Cell World::up_left(Cell* in) const { return in[-m_width-1]; }
-Cell World::up(Cell* in) const { return in[-m_width]; }
-Cell World::up_right(Cell* in) const { return in[-m_width+1]; }
-Cell World::down_left(Cell* in) const { return in[m_width-1]; }
-Cell World::down(Cell* in) const { return in[m_width]; }
-Cell World::down_right(Cell* in) const { return in[m_width+1]; }
-Cell World::left(Cell* in) const { return in[-1]; }
-Cell World::right(Cell* in) const { return in[1]; }
-Cell World::here(Cell* in) const { return in[0]; }
 
 size_t World::index(size_t x, size_t y) const {
-    return y * m_width + x;
+    return y * m_width + (x / cells_per_element);
 }
 
-Cell World::get_active(size_t x, size_t y) const {
-    return m_active[index(x, y)];
-}
-
-void World::set_future(size_t x, size_t y, Cell cell) {
-    m_future[index(x, y)] = cell;
-}
