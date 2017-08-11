@@ -46,7 +46,6 @@ void World::update() {
         element_type in_value = *in;
         for (size_t shift = 1; shift < bits_per_cell; ++shift)
             in_value |= in_value << 1;
-        element_type out_value = 0;
         element_type total_neighbours = (old_neighbours >> max_shift)
                 + (neighbours << bits_per_cell)
                 + neighbours
@@ -54,11 +53,10 @@ void World::update() {
                 + (new_neighbours << max_shift);
 
         element_type result = total_neighbours ^ in_value;
-        for (size_t pos = 0; pos < cells_per_element; ++pos) {
-            size_t self = result >> bits_per_cell*pos & value_mask;
-            out_value |= live_data[self] << (bits_per_cell*pos);
-        }
-        *out = out_value;
+        element_type option_a = ~(result >> 3) & ~(result >> 2) & (result >> 1) & result;
+        element_type option_b = (result >> 3) & ~(result >> 2) & (result >> 1) & result;
+        element_type option_c = (result >> 3) & (result >> 2) & ~(result >> 1) & ~result;
+        *out = (option_a | option_b | option_c) & 0x1111111111111111ull;
         ++in;
         ++out;
         old_neighbours = neighbours;
