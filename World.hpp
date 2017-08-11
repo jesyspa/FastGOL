@@ -1,33 +1,37 @@
 #pragma once
 
+#include "IWorld.hpp"
 #include <vector>
-#include <iosfwd>
 
-enum Cell { dead, alive };
-
-inline Cell to_cell(bool b) {
-    return b ? alive : dead;
-}
-
-class World {
-    size_t width, height;
-    std::vector<Cell> active, future;
+class World final : public IWorld {
+    size_t m_width, m_height;
+    std::vector<Cell> m_active, m_future;
 
     size_t index(size_t x, size_t y) const;
     Cell get_active(size_t x, size_t y) const;
     void set_future(size_t x, size_t y, Cell cell);
 
-    Cell* up(Cell* p) const;
-    Cell* down(Cell* p) const;
-    Cell* left(Cell* p) const;
-    Cell* right(Cell* p) const;
+    Cell up_left(Cell* in) const;
+    Cell up(Cell* in) const;
+    Cell up_right(Cell* in) const;
+    Cell down_left(Cell* in) const;
+    Cell down(Cell* in) const;
+    Cell down_right(Cell* in) const;
+    Cell left(Cell* in) const;
+    Cell right(Cell* in) const;
+    Cell here(Cell* in) const;
 
 public:
+    World();
     World(size_t width, size_t height);
+    World(IWorld const& world);
 
-    void populate_uniform(double chance, unsigned seed = 0);
+    void resize(size_t width, size_t height) override;
+    size_t width() const override;
+    size_t height() const override;
+    Cell get(size_t x, size_t y) const override;
+    void set(size_t x, size_t y, Cell cell) override;
+
     void update();
-
-    friend std::ostream& operator<<(std::ostream& os, World const& world);
 };
 

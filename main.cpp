@@ -1,11 +1,37 @@
 #include "World.hpp"
+#include "ReferenceWorld.hpp"
 #include <iostream>
 #include <chrono>
+#include <stdexcept>
 
 size_t const WORLD_SIZE = 1000;
-size_t const ITERATIONS = 1000;
+size_t const ITERATIONS = 100;
 
-int main() {
+size_t const TEST_SIZE = 6;
+size_t const TEST_COUNT = 5;
+
+void test_world() {
+    ReferenceWorld world(TEST_SIZE, TEST_SIZE);
+    world.populate_uniform(0.3);
+    ReferenceWorld old(world);
+    World real(world);
+
+    world.update();
+    real.update();
+    if (world == real)
+        return;
+
+    std::cerr << "World mismatch:\n";
+    std::cerr << "Initial:\n" << old;
+    std::cerr << "Expected:\n" << world;
+    std::cerr << "Actual:\n" << real;
+    throw std::runtime_error{"Test suite failed."};
+}
+
+int main() try {
+    for (size_t i = 0; i < TEST_COUNT; ++i)
+        test_world();
+
     World world(WORLD_SIZE, WORLD_SIZE);
     world.populate_uniform(0.3);
     auto time_start = std::chrono::system_clock::now();
@@ -16,4 +42,10 @@ int main() {
     auto duration = time_end - time_start;
     std::cout << "Time: " << (std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / 1'000'000. / ITERATIONS)
         << " milliseconds per iteration.\n";
+} catch (std::exception& e) {
+    std::cerr << "Error: " << e.what() << '\n';
+    return -1;
+} catch (...) {
+    std::cerr << "Unknown error.\n";
+    return -1;
 }
