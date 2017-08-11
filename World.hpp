@@ -9,6 +9,7 @@ public:
     using element_type = uint32_t;
     static constexpr size_t bits_per_cell = 4;
     static constexpr size_t cells_per_element = sizeof(element_type) * 8 / bits_per_cell;
+    static constexpr size_t max_shift = bits_per_cell * (cells_per_element - 1);
     static constexpr element_type value_mask = (element_type(1) << bits_per_cell) - 1;
 private:
     size_t m_width, m_height;

@@ -43,37 +43,21 @@ void World::update() {
     element_type neighbours = in[0] + in[m_width];
     element_type new_neighbours = in[1] + in[m_width+1];
 
-    element_type value = 0;
-    auto click_zero = [&] {
-        size_t left_n = old_neighbours >> bits_per_cell*(cells_per_element-1);
-        size_t mid_n = neighbours & value_mask;
-        size_t right_n = (neighbours >> bits_per_cell) & value_mask;
-        size_t num_neighbours = left_n + mid_n + right_n;
-        size_t self = *in % 2;
-        value = live_data[row_size * self + num_neighbours];
-    };
-    auto click_pos = [&](int pos) {
-        size_t left_n = (neighbours >> bits_per_cell*(pos-1)) & value_mask;
-        size_t mid_n = (neighbours >> bits_per_cell*pos) & value_mask;
-        size_t right_n = (neighbours >> bits_per_cell*(pos+1)) & value_mask;
-        size_t num_neighbours = left_n + mid_n + right_n;
-        size_t self = (*in >> bits_per_cell*pos) % 2;
-        value |= live_data[row_size * self + num_neighbours] << (bits_per_cell*pos);
-    };
-    auto click_max = [&] {
-        size_t left_n = (neighbours >> bits_per_cell*(cells_per_element-2)) & value_mask;
-        size_t mid_n = (neighbours >> bits_per_cell*(cells_per_element-1));
-        size_t right_n = new_neighbours & value_mask;
-        size_t num_neighbours = left_n + mid_n + right_n;
-        size_t self = (*in >> bits_per_cell*(cells_per_element-1)) % 2;
-        value |= live_data[row_size * self + num_neighbours] << bits_per_cell*(cells_per_element-1);
-    };
     auto click = [&] {
-        click_zero();
-        for (size_t pos = 1; pos < cells_per_element-1; ++pos)
-            click_pos(pos);
-        click_max();
-        *out = value;
+        element_type in_value = *in;
+        element_type out_value = 0;
+        element_type total_neighbours = (old_neighbours >> max_shift)
+                + (neighbours << bits_per_cell)
+                + neighbours
+                + (neighbours >> bits_per_cell)
+                + (new_neighbours << max_shift);
+
+        for (size_t pos = 0; pos < cells_per_element; ++pos) {
+            size_t num_neighbours = (total_neighbours >> bits_per_cell*pos) & value_mask;
+            size_t self = (in_value >> bits_per_cell*pos) & 1;
+            out_value |= live_data[row_size * self + num_neighbours] << (bits_per_cell*pos);
+        }
+        *out = out_value;
         ++in;
         ++out;
         old_neighbours = neighbours;
