@@ -46,10 +46,13 @@ void World::update() {
     element_type neighbours = 0;
     element_type new_neighbours = 0;
 
-    auto click = [&] {
+    auto process_one = [&] {
         element_type in_value = *in;
-        for (size_t shift = 1; shift < bits_per_cell; ++shift)
-            in_value |= in_value << 1;
+        // Operations like this need to be changed into loops in order for bits_per_cell to be
+        // variable.
+        in_value = in_value | (in_value << 1) | (in_value << 2) | (in_value << 3);
+        // We need the old and new neighbour counts in order to get them right for the leftmost
+        // and rightmost cell.
         element_type total_neighbours = (old_neighbours >> max_shift)
                 + (neighbours << bits_per_cell)
                 + neighbours
@@ -60,8 +63,8 @@ void World::update() {
         element_type option_a = ~(result >> 3) & ~(result >> 2) & (result >> 1) & result;
         element_type option_b = (result >> 3) & ~(result >> 2) & (result >> 1) & result;
         element_type option_c = (result >> 3) & (result >> 2) & ~(result >> 1) & ~result;
-        // The constant here needs to be changed if bits_per_cell is to be variable.
         *out = (option_a | option_b | option_c) & 0x1111111111111111ull;
+
         ++in;
         ++out;
         old_neighbours = neighbours;
@@ -74,15 +77,15 @@ void World::update() {
         old_neighbours = 0;
         neighbours = f(0);
         new_neighbours = f(1);
-        click();
+        process_one();
 
         for (size_t i = 0; i < m_width-2; ++i) {
             new_neighbours = f(1);
-            click();
+            process_one();
         }
 
         new_neighbours = 0;
-        click();
+        process_one();
     };
 
     m_active.swap(m_future);
