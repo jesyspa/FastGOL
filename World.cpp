@@ -39,8 +39,8 @@ void World::update() {
     element_type* in = m_active.data();
     element_type* out = m_future.data();
     element_type old_neighbours = 0;
-    element_type neighbours = in[0] + in[m_width];
-    element_type new_neighbours = in[1] + in[m_width+1];
+    element_type neighbours = 0;
+    element_type new_neighbours = 0;
 
     auto click = [&] {
         element_type in_value = *in;
@@ -65,54 +65,25 @@ void World::update() {
         neighbours = new_neighbours;
     };
 
-    // Top row
-    // First cell
-    click();
-
-    // Other cells
-    for (size_t i = 0; i < m_width-2; ++i) {
-        new_neighbours = in[1] + in[m_width+1];
-        click();
-    }
-    // Last cell
-    new_neighbours = 0;
-    click();
-
-    // Other rows
-    for (size_t j = 0; j < m_height-2; ++j) {
+    auto do_row = [&](auto f) {
         old_neighbours = 0;
-        neighbours = in[-m_width] + in[0] + in[m_width];
-        new_neighbours = in[-m_width+1] + in[1] + in[m_width+1];
-
-        // First cell
+        neighbours = f(0);
+        new_neighbours = f(1);
         click();
 
-        // Other cells
         for (size_t i = 0; i < m_width-2; ++i) {
-            new_neighbours = in[-m_width+1] + in[1] + in[m_width+1];
+            new_neighbours = f(1);
             click();
         }
-        // Last cell
+
         new_neighbours = 0;
         click();
-    }
+    };
 
-    // Last row
-    old_neighbours = 0;
-    neighbours = in[-m_width] + in[0];
-    new_neighbours = in[-m_width+1] + in[1];
-
-    // First cell
-    click();
-
-    // Other cells
-    for (size_t i = 0; i < m_width-2; ++i) {
-        new_neighbours = in[-m_width+1] + in[1];
-        click();
-    }
-    // Last cell
-    new_neighbours = 0;
-    click();
+    do_row([&](int i) { return in[i] + in[m_width+i]; });
+    for (size_t j = 0; j < m_height-2; ++j)
+        do_row([&](int i) { return in[-m_width+i] + in[i] + in[m_width+i]; });
+    do_row([&](int i) { return in[-m_width+i] + in[i]; });
 
     m_active.swap(m_future);
 }
