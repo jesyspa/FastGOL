@@ -23,7 +23,7 @@ World::World() : m_width(), m_height(), m_active(), m_future()
 
 World::World(size_t width, size_t height)
     : m_width(width/cells_per_element), m_height(height),
-      m_active(m_width*m_height), m_future(m_active)
+      m_active(m_width*(m_height+2)), m_future(m_active)
 {
     if (width % cells_per_element != 0)
         throw std::runtime_error{"Width must be a multiple of cells_per_element."};
@@ -36,8 +36,8 @@ World::World(IWorld const& world) : World() {
 }
 
 void World::update() {
-    element_type* in = m_active.data();
-    element_type* out = m_future.data();
+    element_type* in = m_active.data() + m_width;
+    element_type* out = m_future.data() + m_width;
     element_type old_neighbours = 0;
     element_type neighbours = 0;
     element_type new_neighbours = 0;
@@ -63,7 +63,9 @@ void World::update() {
         neighbours = new_neighbours;
     };
 
-    auto do_row = [&](auto f) {
+
+    for (size_t j = 0; j < m_height; ++j) {
+        auto f = [&](int i) { return in[-m_width+i] + in[i] + in[m_width+i]; };
         old_neighbours = 0;
         neighbours = f(0);
         new_neighbours = f(1);
@@ -78,11 +80,6 @@ void World::update() {
         click();
     };
 
-    do_row([&](int i) { return in[i] + in[m_width+i]; });
-    for (size_t j = 0; j < m_height-2; ++j)
-        do_row([&](int i) { return in[-m_width+i] + in[i] + in[m_width+i]; });
-    do_row([&](int i) { return in[-m_width+i] + in[i]; });
-
     m_active.swap(m_future);
 }
 
@@ -91,8 +88,8 @@ void World::resize(size_t width, size_t height) {
         throw std::runtime_error{"Width must be a multiple of cells_per_element."};
     m_width = width/cells_per_element;
     m_height = height;
-    m_active.resize(m_width*m_height);
-    m_future.resize(m_width*m_height);
+    m_active.resize(m_width*(m_height+2));
+    m_future.resize(m_width*(m_height+2));
 }
 
 size_t World::width() const {
@@ -119,6 +116,6 @@ void World::set(size_t x, size_t y, Cell cell) {
 }
 
 size_t World::index(size_t x, size_t y) const {
-    return y * m_width + (x / cells_per_element);
+    return (y+1) * m_width + (x / cells_per_element);
 }
 
