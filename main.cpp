@@ -6,6 +6,7 @@
 
 size_t const WORLD_SIZE = 1024;
 size_t const ITERATIONS = 1000;
+double const PROC_SPEED = 3.6; // cycles / nanosecond
 
 size_t const TEST_SIZE = 64;
 size_t const TEST_COUNT = 5;
@@ -44,8 +45,10 @@ int main() try {
     std::cout << "Done!\n";
 
     auto duration = time_end - time_start;
-    std::cout << "Time: " << (std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / 1'000'000. / ITERATIONS)
+    std::cout << "Time: " << (std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / 1000. / 1000. / ITERATIONS)
         << " milliseconds per iteration.\n";
+    std::cout << "Equivalently: " << (std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() * PROC_SPEED / ITERATIONS / WORLD_SIZE / WORLD_SIZE)
+        << " clock cycles per cell.\n";
 } catch (std::exception& e) {
     std::cerr << "Error: " << e.what() << '\n';
     return -1;
