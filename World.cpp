@@ -2,6 +2,18 @@
 #include <algorithm>
 #include <stdexcept>
 
+namespace {
+    // Make an element where all cells are alive, and no other bits are set.
+    constexpr World::element_type make_all_one_mask() {
+        World::element_type mask = 1;
+        for (size_t i = 0; i < World::cells_per_element; ++i)
+            mask |= mask << World::bits_per_cell;
+        return mask;
+    }
+
+    constexpr World::element_type all_one_mask = make_all_one_mask();
+}
+
 World::World() : m_width(), m_height(), m_active(), m_future()
 { }
 
@@ -45,7 +57,7 @@ void World::update() {
         element_type option_a = ~result_3 & sub;
         element_type option_b = result_3 & sub;
         element_type option_c = result_3 & result_2 & ~result_1 & ~result;
-        *out = (option_a | option_b | option_c) & 0x1111111111111111ull;
+        *out = (option_a | option_b | option_c) & all_one_mask;
 
         ++in;
         ++out;
@@ -92,7 +104,7 @@ size_t World::height() const {
 Cell World::get(size_t x, size_t y) const {
     auto ix = index(x, y);
     auto jx = bits_per_cell * (x % cells_per_element);
-    return to_cell(1 & (m_active[ix] >> jx));
+    return to_cell(element_type(1) & (m_active[ix] >> jx));
 }
 
 void World::set(size_t x, size_t y, Cell cell) {
