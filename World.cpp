@@ -38,9 +38,13 @@ void World::update() {
                 + (new_neighbours << max_shift);
 
         element_type result = total_neighbours ^ in_value;
-        element_type option_a = ~(result >> 3) & ~(result >> 2) & (result >> 1) & result;
-        element_type option_b = (result >> 3) & ~(result >> 2) & (result >> 1) & result;
-        element_type option_c = (result >> 3) & (result >> 2) & ~(result >> 1) & ~result;
+        element_type result_1 = result >> 1;
+        element_type result_2 = result >> 2;
+        element_type result_3 = result >> 3;
+        element_type sub = ~result_2 & result_1 & result;
+        element_type option_a = ~result_3 & sub;
+        element_type option_b = result_3 & sub;
+        element_type option_c = result_3 & result_2 & ~result_1 & ~result;
         *out = (option_a | option_b | option_c) & 0x1111111111111111ull;
 
         ++in;
