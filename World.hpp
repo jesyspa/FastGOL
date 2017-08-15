@@ -19,6 +19,8 @@ public:
     static constexpr size_t max_shift = bits_per_cell * (cells_per_element - 1);
     // What mask to use to get a single element.
     static constexpr element_type value_mask = (element_type(1) << bits_per_cell) - 1;
+    // How far to unroll the 
+    static constexpr size_t unroll_factor = 8;
 private:
     // Width and height of the world data.
     // This does not include the extra rows above and below the data, since those are outside

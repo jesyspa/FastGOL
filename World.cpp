@@ -70,12 +70,27 @@ void World::update() {
         auto f = [&](int i) { return in[-m_width+i] + in[i] + in[m_width+i]; };
         old_neighbours = 0;
         neighbours = f(0);
-        new_neighbours = f(1);
-        process_one();
-
-        for (size_t i = 0; i < m_width-2; ++i) {
+        size_t i = 0;
+        goto middle;
+        while (i < m_width/unroll_factor) {
             new_neighbours = f(1);
             process_one();
+        middle:
+            new_neighbours = f(1);
+            process_one();
+            new_neighbours = f(1);
+            process_one();
+            new_neighbours = f(1);
+            process_one();
+            new_neighbours = f(1);
+            process_one();
+            new_neighbours = f(1);
+            process_one();
+            new_neighbours = f(1);
+            process_one();
+            new_neighbours = f(1);
+            process_one();
+            ++i;
         }
 
         new_neighbours = 0;
@@ -125,6 +140,6 @@ void World::test_size(size_t width, size_t height) const {
     // This is somewhat redundant, as cells_per_element is larger than 2.
     if (width < 2)
         throw std::runtime_error{"Width must be at least two."};
-    if (width % cells_per_element != 0)
-        throw std::runtime_error{"Width must be a multiple of cells_per_element."};
+    if (width % (cells_per_element * 8) != 0)
+        throw std::runtime_error{"Width must be a multiple of cells_per_element times unroll_factor."};
 }
